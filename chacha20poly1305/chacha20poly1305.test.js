@@ -1,248 +1,7 @@
-"use strict";
-
-function df(date) {
-    return "" + ('0' + date.getHours()).slice(-2) +
-        ":" + ('0' + date.getMinutes()).slice(-2) +
-        ":" + ('0' + date.getSeconds()).slice(-2) +
-        "";
-}
-
-class Test {
-    constructor() {
-        this.logs = [];
-    }
-    log(text) {
-        let now = new Date();
-        let msg = "" + ('0' + now.getHours()).slice(-2) +
-            ":" + ('0' + now.getMinutes()).slice(-2) +
-            ":" + ('0' + now.getSeconds()).slice(-2) +
-            " " + text;
-        this.logs.push(msg);
-    }
-}
-
-function TestA1() {
-    let begin = new Date();
-    let t = new Test();
-    t.log("+++++ TestA1 +++++")
-    for (let i = 0; i < TestVectorsA1.length; i++) {
-        let test = TestVectorsA1[i];
-        let block = chacha20_block(str2bs(test.key), test.counter, str2bs(test.nonce));
-        console.log("A1", i, bs2str(block) == test.keystream);
-        if (bs2str(block) == test.keystream) {
-            t.log("chacha20_block case" + i + " Success.");
-        } else {
-            t.log("chacha20_block case" + i + " Fail.");
-        }
-    }
-    let end = new Date();
-    t.log("time " + (end - begin) + " ms.")
-    return t;
-}
-
-function TestA2() {
-    let begin = new Date();
-    let t = new Test();
-    t.log("+++++ TestA2 +++++")
-    for (let i = 0; i < TestVectorsA2.length; i++) {
-        let test = TestVectorsA2[i];
-        let ctext = chacha20_encrypt(str2bs(test.key), test.counter, str2bs(test.nonce), str2bs(test.plaintext));
-        console.log("A2(plain->chiper)", i, bs2str(ctext) == test.ciphertext);
-        if (bs2str(ctext) == test.ciphertext) {
-            t.log("chacha20_encrypt case" + i + " Success.");
-        } else {
-            t.log("chacha20_encrypt case" + i + " Fail.");
-        }
-        let ptext = chacha20_encrypt(str2bs(test.key), test.counter, str2bs(test.nonce), ctext);
-        console.log("A2(chiper->plain)", i, bs2str(ptext) == test.plaintext);
-        if (bs2str(ptext) == test.plaintext) {
-            t.log("chacha20_encrypt case" + i + " Success.");
-        } else {
-            t.log("chacha20_encrypt case" + i + " Fail.");
-        }
-    }
-    let end = new Date();
-    t.log("time " + (end - begin) + " ms.")
-    return t;
-}
-
-function TestA3() {
-    let begin = new Date();
-    let t = new Test();
-    t.log("+++++ TestA3 +++++")
-    for (let i = 0; i < TestVectorsA3.length; i++) {
-        let test = TestVectorsA3[i];
-        let tag = poly1305_mac(str2bs(test.msg), str2bs(test.key));
-        console.log("A3", i, bs2str(tag) == test.tag);
-        if (bs2str(tag) == test.tag) {
-            t.log("poly1305_mac case " + i + " Success.");
-        } else {
-            t.log("poly1305_mac case " + i + " Fail.");
-        }
-    }
-    let end = new Date();
-    t.log("time " + (end - begin) + " ms.")
-    return t;
-}
-
-function TestA4() {
-    let begin = new Date();
-    let t = new Test();
-    t.log("+++++ TestA4 +++++")
-    for (let i = 0; i < TestVectorsA4.length; i++) {
-        let test = TestVectorsA4[i];
-        let otk = poly1305_key_gen(str2bs(test.key), str2bs(test.nonce));
-        console.log("A4", i, bs2str(otk) == test.otk);
-        if (bs2str(otk) == test.otk) {
-            t.log("poly1305_key_gen case" + i + " Success.");
-        } else {
-            t.log("poly1305_key_gen case" + i + " fail.");
-        }
-    }
-    let end = new Date();
-    t.log("time " + (end - begin) + " ms.")
-    return t;
-}
-
-function TestA5() {
-    let begin = new Date();
-    let t = new Test();
-    t.log("+++++ TestA5 +++++")
-    TestA5_1(t);
-    TestA5_2(t);
-    let end = new Date();
-    t.log("time " + (end - begin) + " ms.")
-    return t;
-}
-
-function TestA5_1(t) {
-    let plaintext = str2bs(
-        "4c616469657320616e642047656e746c" +
-        "656d656e206f662074686520636c6173" +
-        "73206f66202739393a20496620492063" +
-        "6f756c64206f6666657220796f75206f" +
-        "6e6c79206f6e652074697020666f7220" +
-        "746865206675747572652c2073756e73" +
-        "637265656e20776f756c642062652069" +
-        "742e");
-    let add = str2bs("50515253c0c1c2c3c4c5c6c7");
-    let key = str2bs(
-        "808182838485868788898a8b8c8d8e8f" +
-        "909192939495969798999a9b9c9d9e9f");
-    let iv = str2bs("4041424344454647");
-    let constant = str2bs("07000000");
-    let nonce = constant.concat(iv);
-    let enc = chacha20_aead_encrypt(key, nonce, plaintext, add);
-    let chipertext = "d31a8d34648e60db7b86afbc53ef7ec2" +
-        "a4aded51296e08fea9e2b5a736ee62d6" +
-        "3dbea45e8ca9671282fafb69da92728b" +
-        "1a71de0a9e060b2905d6a5b67ecd3b36" +
-        "92ddbd7f2d778b8c9803aee328091b58" +
-        "fab324e4fad675945585808b4831d7bc" +
-        "3ff4def08e4b7a9de576d26586cec64b" +
-        "6116";
-    let tag = "1ae10b594f09e26a7e902ecbd0600691";
-    console.log("A5_1 enc", (chipertext + tag) == bs2str(enc));
-    if ((chipertext + tag) == bs2str(enc)) {
-        t.log("chacha20_aead_encrypt case0 Success.");
-    } else {
-        t.log("chacha20_aead_encrypt case0 Fail.");
-    }
-    try {
-        let dec = chacha20_aead_decrypt(key, nonce, add, enc);
-        console.log("A5_1 dec", bs2str(dec) == bs2str(plaintext));
-        if (bs2str(dec) == bs2str(plaintext)) {
-            t.log("chacha20_aead_decrypt case0 Success.");
-        } else {
-            t.log("chacha20_aead_decrypt case0 Fail.");
-        }
-    } catch (e) {
-        t.log("chacha20_aead_decrypt case0 Fail. " + e.message);
-    }
-}
-
-function TestA5_2(t) {
-    let plaintext = str2bs(
-        "496e7465726e65742d44726166747320" +
-        "61726520647261667420646f63756d65" +
-        "6e74732076616c696420666f72206120" +
-        "6d6178696d756d206f6620736978206d" +
-        "6f6e74687320616e64206d6179206265" +
-        "20757064617465642c207265706c6163" +
-        "65642c206f72206f62736f6c65746564" +
-        "206279206f7468657220646f63756d65" +
-        "6e747320617420616e792074696d652e" +
-        "20497420697320696e617070726f7072" +
-        "6961746520746f2075736520496e7465" +
-        "726e65742d4472616674732061732072" +
-        "65666572656e6365206d617465726961" +
-        "6c206f7220746f206369746520746865" +
-        "6d206f74686572207468616e20617320" +
-        "2fe2809c776f726b20696e2070726f67" +
-        "726573732e2fe2809d");
-    let add = str2bs("f33388860000000000004e91");
-    let key = str2bs(
-        "1c9240a5eb55d38af333888604f6b5f0" +
-        "473917c1402b80099dca5cbc207075c0");
-    let nonce = str2bs("000000000102030405060708");
-    let enc = chacha20_aead_encrypt(key, nonce, plaintext, add);
-    let chipertext = "64a0861575861af460f062c79be643bd" +
-        "5e805cfd345cf389f108670ac76c8cb2" +
-        "4c6cfc18755d43eea09ee94e382d26b0" +
-        "bdb7b73c321b0100d4f03b7f355894cf" +
-        "332f830e710b97ce98c8a84abd0b9481" +
-        "14ad176e008d33bd60f982b1ff37c855" +
-        "9797a06ef4f0ef61c186324e2b350638" +
-        "3606907b6a7c02b0f9f6157b53c867e4" +
-        "b9166c767b804d46a59b5216cde7a4e9" +
-        "9040c5a40433225ee282a1b0a06c523e" +
-        "af4534d7f83fa1155b0047718cbc546a" +
-        "0d072b04b3564eea1b422273f548271a" +
-        "0bb2316053fa76991955ebd63159434e" +
-        "cebb4e466dae5a1073a6727627097a10" +
-        "49e617d91d361094fa68f0ff77987130" +
-        "305beaba2eda04df997b714d6c6f2c29" +
-        "a6ad5cb4022b02709b";
-    let tag = "eead9d67890cbb22392336fea1851f38";
-    console.log("A5_2 enc", (chipertext + tag) == bs2str(enc));
-    if ((chipertext + tag) == bs2str(enc)) {
-        t.log("chacha20_aead_encrypt case1 Success.");
-    } else {
-        t.log("chacha20_aead_encrypt case1 Fail.");
-    }
-    try {
-        let dec = chacha20_aead_decrypt(key, nonce, add, enc);
-        console.log("A5_2 dec", bs2str(dec) == bs2str(plaintext));
-        if (bs2str(dec) == bs2str(plaintext)) {
-            t.log("chacha20_aead_decrypt case1 Success.");
-        } else {
-            t.log("chacha20_aead_decrypt case1 Fail.");
-        }
-    } catch (e) {
-        t.log("chacha20_aead_decrypt case1 Fail. " + e.message);
-    }
-}
-
-function bs2str(bs) {
-    let s = "";
-    for (let i = 0; i < bs.length; i++) {
-        if (bs[i] > 0xf) {
-            s += bs[i].toString(16);
-        } else {
-            s += "0" + bs[i].toString(16);
-        }
-    }
-    return s;
-}
-
-function str2bs(str) {
-    let s = str.split(' ').join('');
-    let bs = [];
-    for (let i = 0; i < s.length; i += 2) {
-        bs.push(parseInt(s.substring(i, i + 2), 16));
-    }
-    return bs;
-}
+import * as t from "https://deno.land/std/testing/asserts.ts";
+import { ChaCha20 } from "./ChaCha20.js";
+import { Poly1305 } from "./Poly1305.js";
+import { ChaCha20AEAD } from "./ChaCha20AEAD.js";
 
 const TestVectorsA1 = [
     {
@@ -376,3 +135,156 @@ const TestVectorsA4 = [
         otk: "965e3bc6f9ec7ed9560808f4d229f94b137ff275ca9b3fcbdd59deaad23310ae",
     },
 ];
+
+Deno.test("A1", () => {
+    for (let i = 0; i < TestVectorsA1.length; i++) {
+        let test = TestVectorsA1[i];
+        let block = ChaCha20.block(str2bs(test.key), test.counter, str2bs(test.nonce));
+        console.log("A1", i, bs2str(block) == test.keystream);
+        t.assertEquals(bs2str(block), test.keystream);
+    }
+});
+
+Deno.test("A2", () => {
+    for (let i = 0; i < TestVectorsA2.length; i++) {
+        let test = TestVectorsA2[i];
+        let ctext = ChaCha20.encrypt(str2bs(test.key), test.counter, str2bs(test.nonce), str2bs(test.plaintext));
+        console.log("A2(plain->chiper)", i, bs2str(ctext) == test.ciphertext);
+        t.assertEquals(bs2str(ctext), test.ciphertext);
+        let ptext = ChaCha20.encrypt(str2bs(test.key), test.counter, str2bs(test.nonce), ctext);
+        console.log("A2(chiper->plain)", i, bs2str(ptext) == test.plaintext);
+        t.assertEquals(bs2str(ptext), test.plaintext);
+    }
+});
+
+Deno.test("A3", () => {
+    for (let i = 0; i < TestVectorsA3.length; i++) {
+        let test = TestVectorsA3[i];
+        let tag = Poly1305.mac(str2bs(test.msg), str2bs(test.key));
+        console.log("A3", i, bs2str(tag) == test.tag);
+        t.assertEquals(bs2str(tag), test.tag);
+    }
+});
+
+Deno.test("A4", () => {
+    for (let i = 0; i < TestVectorsA4.length; i++) {
+        let test = TestVectorsA4[i];
+        let otk = Poly1305.keyGen(str2bs(test.key), str2bs(test.nonce));
+        console.log("A4", i, bs2str(otk) == test.otk);
+        t.assertEquals(bs2str(otk), test.otk);
+    }
+});
+
+Deno.test("A5_1", () => {
+    let plaintext = str2bs(
+        "4c616469657320616e642047656e746c" +
+        "656d656e206f662074686520636c6173" +
+        "73206f66202739393a20496620492063" +
+        "6f756c64206f6666657220796f75206f" +
+        "6e6c79206f6e652074697020666f7220" +
+        "746865206675747572652c2073756e73" +
+        "637265656e20776f756c642062652069" +
+        "742e");
+    let add = str2bs("50515253c0c1c2c3c4c5c6c7");
+    let key = str2bs(
+        "808182838485868788898a8b8c8d8e8f" +
+        "909192939495969798999a9b9c9d9e9f");
+    let iv = str2bs("4041424344454647");
+    let constant = str2bs("07000000");
+    let nonce = constant.concat(iv);
+    let enc = ChaCha20AEAD.encrypt(key, nonce, plaintext, add);
+    let chipertext = "d31a8d34648e60db7b86afbc53ef7ec2" +
+        "a4aded51296e08fea9e2b5a736ee62d6" +
+        "3dbea45e8ca9671282fafb69da92728b" +
+        "1a71de0a9e060b2905d6a5b67ecd3b36" +
+        "92ddbd7f2d778b8c9803aee328091b58" +
+        "fab324e4fad675945585808b4831d7bc" +
+        "3ff4def08e4b7a9de576d26586cec64b" +
+        "6116";
+    let tag = "1ae10b594f09e26a7e902ecbd0600691";
+    console.log("A5_1 enc", (chipertext + tag) == bs2str(enc));
+    t.assertEquals(chipertext + tag, bs2str(enc));
+    try {
+        let dec = ChaCha20AEAD.decrypt(key, nonce, add, enc);
+        console.log("A5_1 dec", bs2str(dec) == bs2str(plaintext));
+        t.assertEquals(bs2str(dec), bs2str(plaintext));
+    } catch (e) {
+        console.log(e);
+        t.fail();
+    }
+});
+
+Deno.test("A5_2", () => {
+    let plaintext = str2bs(
+        "496e7465726e65742d44726166747320" +
+        "61726520647261667420646f63756d65" +
+        "6e74732076616c696420666f72206120" +
+        "6d6178696d756d206f6620736978206d" +
+        "6f6e74687320616e64206d6179206265" +
+        "20757064617465642c207265706c6163" +
+        "65642c206f72206f62736f6c65746564" +
+        "206279206f7468657220646f63756d65" +
+        "6e747320617420616e792074696d652e" +
+        "20497420697320696e617070726f7072" +
+        "6961746520746f2075736520496e7465" +
+        "726e65742d4472616674732061732072" +
+        "65666572656e6365206d617465726961" +
+        "6c206f7220746f206369746520746865" +
+        "6d206f74686572207468616e20617320" +
+        "2fe2809c776f726b20696e2070726f67" +
+        "726573732e2fe2809d");
+    let add = str2bs("f33388860000000000004e91");
+    let key = str2bs(
+        "1c9240a5eb55d38af333888604f6b5f0" +
+        "473917c1402b80099dca5cbc207075c0");
+    let nonce = str2bs("000000000102030405060708");
+    let enc = ChaCha20AEAD.encrypt(key, nonce, plaintext, add);
+    let chipertext = "64a0861575861af460f062c79be643bd" +
+        "5e805cfd345cf389f108670ac76c8cb2" +
+        "4c6cfc18755d43eea09ee94e382d26b0" +
+        "bdb7b73c321b0100d4f03b7f355894cf" +
+        "332f830e710b97ce98c8a84abd0b9481" +
+        "14ad176e008d33bd60f982b1ff37c855" +
+        "9797a06ef4f0ef61c186324e2b350638" +
+        "3606907b6a7c02b0f9f6157b53c867e4" +
+        "b9166c767b804d46a59b5216cde7a4e9" +
+        "9040c5a40433225ee282a1b0a06c523e" +
+        "af4534d7f83fa1155b0047718cbc546a" +
+        "0d072b04b3564eea1b422273f548271a" +
+        "0bb2316053fa76991955ebd63159434e" +
+        "cebb4e466dae5a1073a6727627097a10" +
+        "49e617d91d361094fa68f0ff77987130" +
+        "305beaba2eda04df997b714d6c6f2c29" +
+        "a6ad5cb4022b02709b";
+    let tag = "eead9d67890cbb22392336fea1851f38";
+    console.log("A5_2 enc", (chipertext + tag) == bs2str(enc));
+    t.assertEquals(chipertext + tag, bs2str(enc));
+    try {
+        let dec = ChaCha20AEAD.decrypt(key, nonce, add, enc);
+        console.log("A5_2 dec", bs2str(dec) == bs2str(plaintext));
+        t.assertEquals(bs2str(dec), bs2str(plaintext));
+    } catch (e) {
+        t.fail();
+    }
+});
+
+function bs2str(bs) {
+    let s = "";
+    for (let i = 0; i < bs.length; i++) {
+        if (bs[i] > 0xf) {
+            s += bs[i].toString(16);
+        } else {
+            s += "0" + bs[i].toString(16);
+        }
+    }
+    return s;
+}
+
+function str2bs(str) {
+    let s = str.split(' ').join('');
+    let bs = [];
+    for (let i = 0; i < s.length; i += 2) {
+        bs.push(parseInt(s.substring(i, i + 2), 16));
+    }
+    return bs;
+}
